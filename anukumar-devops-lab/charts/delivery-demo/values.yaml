@@ -1,0 +1,11 @@
+replicaCount: 2
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: "1.28-alpine"
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi

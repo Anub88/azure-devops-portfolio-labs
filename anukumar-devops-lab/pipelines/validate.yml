@@ -1,0 +1,28 @@
+parameters:
+  - name: labDirectory
+    type: string
+    default: devops-lab
+
+stages:
+  - stage: Validate
+    jobs:
+      - job: OfflineChecks
+        steps:
+          - checkout: self
+            persistCredentials: false
+          - bash: |
+              set -euo pipefail
+              terraform version
+              terraform fmt -check -recursive infra
+              terraform -chdir=infra init -backend=false -input=false -lockfile=readonly
+              terraform -chdir=infra validate
+              python3 -m unittest discover -s tests -v
+              helm lint charts/delivery-demo
+              helm template demo charts/delivery-demo > "$(Agent.TempDirectory)/demo-rendered.yaml"
+            workingDirectory: $(Build.SourcesDirectory)/${{ parameters.labDirectory }}
+            displayName: Validate Terraform, identity logic and Helm (no deployment)
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: $(Agent.TempDirectory)/demo-rendered.yaml
+              artifact: rendered-demo
+            displayName: Publish rendered manifests for review
